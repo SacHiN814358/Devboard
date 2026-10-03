@@ -28,6 +28,8 @@ export default function KanbanBoard({ project, initialTasks, user }) {
   const [memberEmail, setMemberEmail] = useState('')
   const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'MEDIUM', due_date: '' })
 
+  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'
+
   // Supabase Realtime — live task updates
   useEffect(() => {
     const channel = supabase
@@ -38,7 +40,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
       }, (payload) => {
         if (payload.eventType === 'INSERT') {
           if (payload.new.creator_id !== user.id) {
-            setTasks(prev => [payload.new, ...prev])
+            setTasks(prev => [{ ...payload.new, comment_count: 0 }, ...prev])
             toast(`Naya task add hua: "${payload.new.title}"`, { icon: '📋' })
           }
         } else if (payload.eventType === 'UPDATE') {
@@ -74,11 +76,12 @@ export default function KanbanBoard({ project, initialTasks, user }) {
         project_id: project.id,
         creator_id: user.id,
       })
-      .select(`*, assignee:assignee_id(id, name), creator:creator_id(id, name)`)
+      .select('*')
       .single()
 
-    if (error) return toast.error('Task nahi bana')
-    setTasks(prev => [data, ...prev])
+    if (error) return toast.error('Task nahi bana: ' + error.message)
+
+    setTasks(prev => [{ ...data, comment_count: 0 }, ...prev])
     setShowAddTask(null)
     setTaskForm({ title: '', description: '', priority: 'MEDIUM', due_date: '' })
     toast.success('Task add ho gaya!')
@@ -97,12 +100,23 @@ export default function KanbanBoard({ project, initialTasks, user }) {
     setNewComment('')
     const { data, error } = await supabase
       .from('comments')
-      .select(`*, profiles:author_id(id, name)`)
+      .select('*, profiles(id, name)')
       .eq('task_id', task.id)
       .order('created_at', { ascending: true })
 
     if (error) {
-      console.error('Comments fetch error:', error)
+      const { data: fallbackData } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('task_id', task.id)
+        .order('created_at', { ascending: true })
+
+      const formatted = (fallbackData || []).map(c => ({
+        ...c,
+        author: { name: c.author_id === user.id ? userName : 'Member' }
+      }))
+      setComments(formatted)
+      return
     }
 
     const formatted = (data || []).map(c => ({
@@ -116,8 +130,8 @@ export default function KanbanBoard({ project, initialTasks, user }) {
     if (!newComment.trim()) return
     const { data, error } = await supabase
       .from('comments')
-      .insert({ content: newComment, task_id: selectedTask.id, author_id: user.id })
-      .select(`*, profiles:author_id(id, name)`)
+      .insert({ content: newComment.trim(), task_id: selectedTask.id, author_id: user.id })
+      .select('*')
       .single()
 
     if (error) {
@@ -125,15 +139,15 @@ export default function KanbanBoard({ project, initialTasks, user }) {
       return
     }
 
-    const formattedComment = {
+    const newCommentObj = {
       ...data,
-      author: data.profiles || { name: userName }
+      author: { name: userName }
     }
 
-    setComments(prev => [...prev, formattedComment])
+    setComments(prev => [...prev, newCommentObj])
     setNewComment('')
 
-    // Live update comment count on the task card
+    // Live update comment_count on card
     setTasks(prev => prev.map(t => {
       if (t.id === selectedTask.id) {
         return { ...t, comment_count: (t.comment_count || 0) + 1 }
@@ -157,8 +171,6 @@ export default function KanbanBoard({ project, initialTasks, user }) {
     setMemberEmail('')
     setShowMemberModal(false)
   }
-
-  const userName = user?.user_metadata?.name || user?.email?.split('@')[0]
 
   return (
     <div className="min-h-screen">
@@ -204,7 +216,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
               <div key={col.id} className={`rounded-2xl p-3 ${col.bg} min-h-[500px]`}>
                 <div className="flex items-center justify-between mb-3 px-1">
                   <span className="font-semibold text-sm">{col.label}</span>
-                  <span className="bg-white dark:bg-gray-800 text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+                  <span className="bg-indigo-600 text-white dark:bg-indigo-500 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">
                     {getByStatus(col.id).length}
                   </span>
                 </div>
@@ -238,8 +250,9 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                                     <span className="text-xs text-gray-500">{task.assignee.name.split(' ')[0]}</span>
                                   </div>
                                 ) : <div />}
-                                <div className="flex items-center gap-1 text-xs text-gray-400">
-                                  <MessageSquare size={11} /> {task.comment_count ?? 0}
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                  <MessageSquare size={13} className="text-indigo-500" />
+                                  <span>{task.comment_count ?? 0}</span>
                                 </div>
                               </div>
                             </div>
