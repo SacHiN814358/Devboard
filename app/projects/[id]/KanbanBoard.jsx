@@ -132,6 +132,16 @@ export default function KanbanBoard({ project, initialTasks, user }) {
 
     setComments(prev => [...prev, formattedComment])
     setNewComment('')
+
+    // Live update comment count on the task card
+    setTasks(prev => prev.map(t => {
+      if (t.id === selectedTask.id) {
+        const currentCount = t.comments?.[0]?.count ?? 0
+        return { ...t, comments: [{ count: currentCount + 1 }] }
+      }
+      return t
+    }))
+
     toast.success('Comment post ho gaya!')
   }
 
@@ -230,7 +240,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                                   </div>
                                 ) : <div />}
                                 <div className="flex items-center gap-1 text-xs text-gray-400">
-                                  <MessageSquare size={11} /> 0
+                                  <MessageSquare size={11} /> {task.comments?.[0]?.count ?? 0}
                                 </div>
                               </div>
                             </div>

@@ -24,7 +24,8 @@ export default async function ProjectPage({ params }) {
     .select(`
       *,
       assignee:assignee_id(id, name),
-      creator:creator_id(id, name)
+      creator:creator_id(id, name),
+      comments(count)
     `)
     .eq('project_id', params.id)
     .order('created_at', { ascending: false })
