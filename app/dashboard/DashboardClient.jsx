@@ -22,23 +22,27 @@ export default function DashboardClient({ initialProjects, taskCount, user }) {
   const createProject = async (e) => {
     e.preventDefault()
     setCreating(true)
-    const { data, error } = await supabase
+    const { data: projectData, error: projectError } = await supabase
       .from('projects')
       .insert({ name: form.name, description: form.description, color: form.color, owner_id: user.id })
-      .select(`*, profiles:owner_id(id, name), project_members(id, role, profiles(id, name))`)
+      .select('*')
       .single()
 
-    if (error) {
-      toast.error('Project nahi bana: ' + error.message)
-    } else {
-      // Owner ko member bhi banao
-      await supabase.from('project_members').insert({ project_id: data.id, user_id: user.id, role: 'OWNER' })
-      setProjects([data, ...projects])
-      setShowModal(false)
-      setForm({ name: '', description: '', color: '#6366f1' })
-      toast.success('Project ban gaya! 🎉')
+    if (projectError) {
+      toast.error('Project nahi bana: ' + projectError.message)
+      setCreating(false)
+      return
     }
+
+    // Owner ko member bhi banao
+    await supabase.from('project_members').insert({ project_id: projectData.id, user_id: user.id, role: 'OWNER' })
+
+    setProjects([projectData, ...projects])
+    setShowModal(false)
+    setForm({ name: '', description: '', color: '#6366f1' })
+    toast.success('Project ban gaya! 🎉')
     setCreating(false)
+    router.refresh()
   }
 
   const deleteProject = async (projectId, e) => {
