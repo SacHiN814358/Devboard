@@ -95,12 +95,21 @@ export default function KanbanBoard({ project, initialTasks, user }) {
   const openTask = async (task) => {
     setSelectedTask(task)
     setNewComment('')
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('comments')
-      .select(`*, author:author_id(id, name)`)
+      .select(`*, profiles:author_id(id, name)`)
       .eq('task_id', task.id)
       .order('created_at', { ascending: true })
-    setComments(data || [])
+
+    if (error) {
+      console.error('Comments fetch error:', error)
+    }
+
+    const formatted = (data || []).map(c => ({
+      ...c,
+      author: c.profiles || { name: 'User' }
+    }))
+    setComments(formatted)
   }
 
   const addComment = async () => {
@@ -108,12 +117,22 @@ export default function KanbanBoard({ project, initialTasks, user }) {
     const { data, error } = await supabase
       .from('comments')
       .insert({ content: newComment, task_id: selectedTask.id, author_id: user.id })
-      .select(`*, author:author_id(id, name)`)
+      .select(`*, profiles:author_id(id, name)`)
       .single()
-    if (!error) {
-      setComments(prev => [...prev, data])
-      setNewComment('')
+
+    if (error) {
+      toast.error('Comment nahi hua: ' + error.message)
+      return
     }
+
+    const formattedComment = {
+      ...data,
+      author: data.profiles || { name: userName }
+    }
+
+    setComments(prev => [...prev, formattedComment])
+    setNewComment('')
+    toast.success('Comment post ho gaya!')
   }
 
   const addMember = async () => {
