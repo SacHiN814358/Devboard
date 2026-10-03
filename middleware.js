@@ -9,16 +9,15 @@ export async function middleware(request) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        get(name) { return request.cookies.get(name)?.value },
-        set(name, value, options) {
-          request.cookies.set({ name, value, ...options })
-          response = NextResponse.next({ request: { headers: request.headers } })
-          response.cookies.set({ name, value, ...options })
+        getAll() {
+          return request.cookies.getAll()
         },
-        remove(name, options) {
-          request.cookies.set({ name, value: '', ...options })
-          response = NextResponse.next({ request: { headers: request.headers } })
-          response.cookies.set({ name, value: '', ...options })
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          response = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
         },
       },
     }
@@ -26,15 +25,13 @@ export async function middleware(request) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protected routes — login nahi hai toh redirect
+  // Protected routes
   if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
   if (!user && request.nextUrl.pathname.startsWith('/projects')) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
-
-  // Already logged in — login/register pe mat jao
   if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import KanbanBoard from './KanbanBoard'
 
 export default async function ProjectPage({ params }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
