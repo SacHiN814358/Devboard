@@ -12,7 +12,7 @@ export default async function DashboardPage() {
     .from('projects')
     .select(`
       *,
-      profiles!projects_owner_id_fkey(id, name),
+      profiles:owner_id(id, name),
       project_members(id, role, profiles(id, name))
     `)
     .order('created_at', { ascending: false })

@@ -25,7 +25,7 @@ export default function DashboardClient({ initialProjects, taskCount, user }) {
     const { data, error } = await supabase
       .from('projects')
       .insert({ name: form.name, description: form.description, color: form.color, owner_id: user.id })
-      .select(`*, profiles!projects_owner_id_fkey(id, name), project_members(id, role, profiles(id, name))`)
+      .select(`*, profiles:owner_id(id, name), project_members(id, role, profiles(id, name))`)
       .single()
 
     if (error) {

@@ -74,7 +74,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
         project_id: project.id,
         creator_id: user.id,
       })
-      .select(`*, assignee:profiles!tasks_assignee_id_fkey(id, name), creator:profiles!tasks_creator_id_fkey(id, name)`)
+      .select(`*, assignee:assignee_id(id, name), creator:creator_id(id, name)`)
       .single()
 
     if (error) return toast.error('Task nahi bana')
@@ -97,7 +97,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
     setNewComment('')
     const { data } = await supabase
       .from('comments')
-      .select(`*, author:profiles!comments_author_id_fkey(id, name)`)
+      .select(`*, author:author_id(id, name)`)
       .eq('task_id', task.id)
       .order('created_at', { ascending: true })
     setComments(data || [])
@@ -108,7 +108,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
     const { data, error } = await supabase
       .from('comments')
       .insert({ content: newComment, task_id: selectedTask.id, author_id: user.id })
-      .select(`*, author:profiles!comments_author_id_fkey(id, name)`)
+      .select(`*, author:author_id(id, name)`)
       .single()
     if (!error) {
       setComments(prev => [...prev, data])

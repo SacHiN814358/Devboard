@@ -11,7 +11,7 @@ export default async function ProjectPage({ params }) {
     .from('projects')
     .select(`
       *,
-      profiles!projects_owner_id_fkey(id, name),
+      profiles:owner_id(id, name),
       project_members(id, role, profiles(id, name))
     `)
     .eq('id', params.id)
@@ -23,8 +23,8 @@ export default async function ProjectPage({ params }) {
     .from('tasks')
     .select(`
       *,
-      assignee:profiles!tasks_assignee_id_fkey(id, name),
-      creator:profiles!tasks_creator_id_fkey(id, name)
+      assignee:assignee_id(id, name),
+      creator:creator_id(id, name)
     `)
     .eq('project_id', params.id)
     .order('created_at', { ascending: false })
