@@ -88,13 +88,15 @@ export default function KanbanBoard({ project, initialTasks, user }) {
         event: 'INSERT', schema: 'public', table: 'comments',
       }, (payload) => {
         const addedComment = payload.new
-        // Increment comment count for the corresponding task
-        setTasks(prev => prev.map(t => {
-          if (t.id === addedComment.task_id) {
-            return { ...t, comment_count: (Number(t.comment_count) || 0) + 1 }
-          }
-          return t
-        }))
+        // Only increment for other users/tabs to avoid double-counting optimistic updates
+        if (addedComment && addedComment.author_id !== user.id) {
+          setTasks(prev => prev.map(t => {
+            if (t.id === addedComment.task_id) {
+              return { ...t, comment_count: (Number(t.comment_count) || 0) + 1 }
+            }
+            return t
+          }))
+        }
       })
       .subscribe()
 
