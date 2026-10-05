@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../lib/supabase/client'
-import { LayoutDashboard, Moon, Sun, Bell, LogOut, ChevronDown } from 'lucide-react'
+import { Sparkles, Moon, Sun, LogOut, ChevronDown } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export default function Navbar() {
@@ -36,44 +36,57 @@ export default function Navbar() {
     router.refresh()
   }
 
-  const name = user?.user_metadata?.name || user?.email?.split('@')[0] || 'U'
+  const name = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'
 
   return (
-    <nav className="card border-x-0 border-t-0 rounded-none sticky top-0 z-50 px-6 py-3">
+    <nav className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-zinc-950/80 border-b border-zinc-200/80 dark:border-zinc-800/80 px-4 sm:px-6 py-3 transition-colors">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl">
-          <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-            <LayoutDashboard size={18} className="text-white" />
+        <Link href="/dashboard" className="flex items-center gap-2.5 group">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center shadow-sm shadow-indigo-500/25 group-hover:scale-105 transition-transform duration-200">
+            <Sparkles size={18} className="text-white" />
           </div>
-          <span className="text-primary-600 dark:text-primary-400">DevBoard</span>
+          <div className="flex flex-col">
+            <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-zinc-900 to-zinc-700 dark:from-white dark:to-zinc-300 bg-clip-text text-transparent">
+              DevBoard
+            </span>
+          </div>
         </Link>
 
-        <div className="flex items-center gap-2">
-          <button onClick={toggleDark}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-            {dark ? <Sun size={18} /> : <Moon size={18} />}
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={toggleDark}
+            aria-label="Toggle Theme"
+            className="p-2.5 rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all active:scale-95 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
+          >
+            {dark ? <Sun size={17} /> : <Moon size={17} />}
           </button>
 
           <div className="relative">
-            <button onClick={() => setShowMenu(!showMenu)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-              <div className="w-7 h-7 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900/90 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 transition-all"
+            >
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold shadow-xs">
                 {name.charAt(0).toUpperCase()}
               </div>
-              <span className="text-sm font-medium hidden sm:block">{name}</span>
-              <ChevronDown size={14} className="text-gray-400" />
+              <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200 hidden sm:block max-w-[120px] truncate">
+                {name}
+              </span>
+              <ChevronDown size={14} className="text-zinc-400 transition-transform duration-200" style={{ transform: showMenu ? 'rotate(180deg)' : 'none' }} />
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 top-12 card w-48 py-1 shadow-lg z-50">
-                <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-                  <p className="text-sm font-semibold truncate">{name}</p>
-                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+              <div className="absolute right-0 top-12 w-56 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl py-1.5 z-50 animate-pop">
+                <div className="px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-800">
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{name}</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">{user?.email}</p>
                 </div>
-                <button onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50/80 dark:hover:bg-rose-950/30 transition-colors"
+                >
                   <LogOut size={15} />
-                  Logout
+                  Log out
                 </button>
               </div>
             )}

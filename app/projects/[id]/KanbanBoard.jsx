@@ -4,20 +4,63 @@ import { useRouter } from 'next/navigation'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { createClient } from '../../../lib/supabase/client'
 import Navbar from '../../../components/Navbar'
-import { ArrowLeft, Plus, X, Flame, MessageSquare, Users } from 'lucide-react'
+import {
+  ArrowLeft,
+  Plus,
+  X,
+  MessageSquare,
+  Users,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  Circle,
+  Clock3,
+  Trash2,
+  Send
+} from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import { format } from 'date-fns'
 
 const COLUMNS = [
-  { id: 'TODO', label: '📋 To Do', bg: 'bg-gray-100/90 dark:bg-gray-900/90 border border-gray-200/80 dark:border-gray-800' },
-  { id: 'IN_PROGRESS', label: '⚙️ In Progress', bg: 'bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/40' },
-  { id: 'DONE', label: '✅ Done', bg: 'bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-900/40' },
+  {
+    id: 'TODO',
+    label: 'To Do',
+    dotColor: 'bg-indigo-500',
+    icon: Circle,
+    bg: 'bg-zinc-100/70 dark:bg-zinc-900/40 border border-zinc-200/70 dark:border-zinc-800/60'
+  },
+  {
+    id: 'IN_PROGRESS',
+    label: 'In Progress',
+    dotColor: 'bg-amber-500',
+    icon: Clock3,
+    bg: 'bg-zinc-100/70 dark:bg-zinc-900/40 border border-zinc-200/70 dark:border-zinc-800/60'
+  },
+  {
+    id: 'DONE',
+    label: 'Done',
+    dotColor: 'bg-emerald-500',
+    icon: CheckCircle2,
+    bg: 'bg-zinc-100/70 dark:bg-zinc-900/40 border border-zinc-200/70 dark:border-zinc-800/60'
+  },
 ]
 
-const PRIORITY_COLOR = {
-  HIGH: 'text-red-600 dark:text-red-400',
-  MEDIUM: 'text-amber-600 dark:text-amber-400',
-  LOW: 'text-emerald-600 dark:text-emerald-400',
+const PRIORITY_CONFIG = {
+  HIGH: {
+    label: 'High',
+    dot: 'bg-rose-500',
+    style: 'text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border-rose-200/60 dark:border-rose-900/40',
+  },
+  MEDIUM: {
+    label: 'Medium',
+    dot: 'bg-amber-500',
+    style: 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200/60 dark:border-amber-900/40',
+  },
+  LOW: {
+    label: 'Low',
+    dot: 'bg-emerald-500',
+    style: 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200/60 dark:border-emerald-900/40',
+  },
 }
 
 export default function KanbanBoard({ project, initialTasks, user }) {
@@ -76,7 +119,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
         if (payload.eventType === 'INSERT') {
           if (payload.new.creator_id !== user.id) {
             setTasks(prev => [{ ...payload.new, comment_count: 0 }, ...prev])
-            toast(`Naya task add hua: "${payload.new.title}"`, { icon: '📋' })
+            toast(`New task added: "${payload.new.title}"`, { icon: '✨' })
           }
         } else if (payload.eventType === 'UPDATE') {
           setTasks(prev => prev.map(t => t.id === payload.new.id ? { ...t, ...payload.new, comment_count: t.comment_count ?? 0 } : t))
@@ -128,27 +171,26 @@ export default function KanbanBoard({ project, initialTasks, user }) {
       .select('*')
       .single()
 
-    if (error) return toast.error('Task nahi bana: ' + error.message)
+    if (error) return toast.error('Could not create task: ' + error.message)
 
     setTasks(prev => [{ ...data, comment_count: 0 }, ...prev])
     setShowAddTask(null)
     setTaskForm({ title: '', description: '', priority: 'MEDIUM', due_date: '' })
-    toast.success('Task add ho gaya!')
+    toast.success('Task created successfully')
   }
 
   const deleteTask = async (taskId) => {
-    if (!confirm('Task delete karna hai?')) return
+    if (!confirm('Are you sure you want to delete this task?')) return
     await supabase.from('tasks').delete().eq('id', taskId)
     setTasks(prev => prev.filter(t => t.id !== taskId))
     setSelectedTask(null)
-    toast.success('Task delete ho gaya')
+    toast.success('Task deleted')
   }
 
   const openTask = async (task) => {
     setSelectedTask(task)
     setNewComment('')
 
-    // Fetch comments for this specific task
     const { data, error } = await supabase
       .from('comments')
       .select('*')
@@ -184,7 +226,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
       .single()
 
     if (error) {
-      toast.error('Comment nahi hua: ' + error.message)
+      toast.error('Could not post comment: ' + error.message)
       return
     }
 
@@ -205,7 +247,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
       return t
     }))
 
-    toast.success('Comment post ho gaya!')
+    toast.success('Comment posted!')
   }
 
   const addMember = async () => {
@@ -215,334 +257,375 @@ export default function KanbanBoard({ project, initialTasks, user }) {
       .eq('email', memberEmail.trim())
       .single()
 
-    if (!profile) return toast.error('Yeh user nahi mila. Pehle register karna hoga.')
+    if (!profile) return toast.error('User not found. They need an existing account.')
     await supabase.from('project_members').upsert({ project_id: project.id, user_id: profile.id })
-    toast.success(`${profile.name} ko add kar diya!`)
+    toast.success(`${profile.name} added to the project!`)
     setMemberEmail('')
     setShowMemberModal(false)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors">
       <Navbar />
       <Toaster position="top-right" />
 
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
-            title="Dashboard wapas jao"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div className="flex-1 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl shadow-sm flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: project.color }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-7 animate-fade-in">
+        {/* Project Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
+          <div className="flex items-center gap-3.5">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="p-2 rounded-xl text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-900 transition-all active:scale-95 border border-transparent hover:border-zinc-300/60 dark:hover:border-zinc-800"
+              title="Back to Dashboard"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <div
+              className="w-10 h-10 rounded-2xl shadow-sm flex items-center justify-center text-white font-bold text-base shadow-indigo-500/15"
+              style={{ backgroundColor: project.color || '#6366f1' }}
+            >
               {project.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{project.name}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+                {project.name}
+              </h1>
               {project.description && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{project.description}</p>
+                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-0.5 line-clamp-1">
+                  {project.description}
+                </p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex -space-x-2">
-              {project.project_members?.slice(0, 5).map(m => (
-                <div
-                  key={m.id}
-                  title={m.profiles?.name}
-                  className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-900 flex items-center justify-center text-white text-xs font-bold shadow-sm"
-                  style={{ backgroundColor: project.color }}
-                >
-                  {m.profiles?.name?.charAt(0).toUpperCase()}
-                </div>
-              ))}
-            </div>
+
+          <div className="flex items-center gap-3 self-end sm:self-auto">
+            {project.project_members && project.project_members.length > 0 && (
+              <div className="flex -space-x-2 overflow-hidden py-1">
+                {project.project_members.slice(0, 5).map(m => (
+                  <div
+                    key={m.id}
+                    title={m.profiles?.name}
+                    className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-zinc-950 flex items-center justify-center text-white text-xs font-semibold shadow-xs"
+                    style={{ backgroundColor: project.color || '#6366f1' }}
+                  >
+                    {m.profiles?.name?.charAt(0).toUpperCase()}
+                  </div>
+                ))}
+              </div>
+            )}
             {project.owner_id === user.id && (
-              <button onClick={() => setShowMemberModal(true)} className="btn-secondary text-sm py-1.5 px-3">
+              <button
+                onClick={() => setShowMemberModal(true)}
+                className="btn-secondary text-xs sm:text-sm py-2 px-3.5"
+              >
                 <Users size={15} /> Add Member
               </button>
             )}
           </div>
         </div>
 
-        {/* Kanban Board Columns */}
+        {/* Modern Kanban Board Columns */}
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {COLUMNS.map(col => (
-              <div key={col.id} className={`rounded-2xl p-4 ${col.bg} min-h-[520px] flex flex-col shadow-sm`}>
-                <div className="flex items-center justify-between mb-4 px-1">
-                  <span className="font-bold text-sm text-gray-900 dark:text-gray-100">{col.label}</span>
-                  <span className="bg-indigo-600 text-white dark:bg-indigo-500 text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-sm min-w-[24px] text-center">
-                    {getByStatus(col.id).length}
-                  </span>
-                </div>
-
-                <Droppable droppableId={col.id}>
-                  {(provided, snap) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`space-y-3 flex-1 min-h-[80px] rounded-xl transition-colors p-1 ${
-                        snap.isDraggingOver ? 'bg-indigo-100/60 dark:bg-indigo-950/40' : ''
-                      }`}
-                    >
-                      {getByStatus(col.id).map((task, i) => (
-                        <Draggable key={task.id} draggableId={task.id} index={i}>
-                          {(provided, snap) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              onClick={() => openTask(task)}
-                              className={`card p-4 cursor-pointer hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-600 transition-all ${
-                                snap.isDragging ? 'shadow-xl rotate-1 scale-105 ring-2 ring-indigo-500' : ''
-                              }`}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex-1 line-clamp-2">
-                                  {task.title}
-                                </p>
-                                <div className="flex items-center gap-1 flex-shrink-0">
-                                  <Flame size={15} className={PRIORITY_COLOR[task.priority]} />
-                                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                    {task.priority}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {task.description && (
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
-                                  {task.description}
-                                </p>
-                              )}
-
-                              <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-800">
-                                <div className="flex items-center gap-2">
-                                  {task.due_date && (
-                                    <span className="text-xs text-gray-600 dark:text-gray-400 font-medium bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md">
-                                      📅 {format(new Date(task.due_date), 'MMM d')}
-                                    </span>
-                                  )}
-                                  {task.assignee && (
-                                    <div className="flex items-center gap-1.5">
-                                      <div
-                                        className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-sm"
-                                        style={{ backgroundColor: project.color }}
-                                      >
-                                        {task.assignee.name.charAt(0)}
-                                      </div>
-                                      <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                                        {task.assignee.name.split(' ')[0]}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* High-Contrast Comment Badge */}
-                                <div
-                                  className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/80 px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800 shadow-xs"
-                                  title={`${task.comment_count || 0} comments`}
-                                >
-                                  <MessageSquare size={13} className="text-indigo-600 dark:text-indigo-400" />
-                                  <span>{task.comment_count || 0}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+            {COLUMNS.map(col => {
+              const columnTasks = getByStatus(col.id)
+              return (
+                <div
+                  key={col.id}
+                  className={`rounded-3xl p-4 ${col.bg} min-h-[560px] flex flex-col shadow-xs transition-colors`}
+                >
+                  {/* Column Header */}
+                  <div className="flex items-center justify-between mb-4 px-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${col.dotColor}`} />
+                      <span className="font-semibold text-sm tracking-tight text-zinc-800 dark:text-zinc-200">
+                        {col.label}
+                      </span>
                     </div>
-                  )}
-                </Droppable>
-
-                {/* Add Task Form */}
-                {showAddTask === col.id ? (
-                  <div className="mt-3 card p-3.5 space-y-2.5 shadow-md">
-                    <input
-                      autoFocus
-                      className="input text-sm"
-                      placeholder="Task ka naam..."
-                      value={taskForm.title}
-                      onChange={e => setTaskForm({ ...taskForm, title: e.target.value })}
-                      onKeyDown={e => e.key === 'Enter' && createTask(col.id)}
-                    />
-                    <textarea
-                      className="input text-sm resize-none"
-                      rows={2}
-                      placeholder="Description..."
-                      value={taskForm.description}
-                      onChange={e => setTaskForm({ ...taskForm, description: e.target.value })}
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <select
-                        className="input text-sm"
-                        value={taskForm.priority}
-                        onChange={e => setTaskForm({ ...taskForm, priority: e.target.value })}
-                      >
-                        <option value="LOW">🟢 Low Priority</option>
-                        <option value="MEDIUM">🟡 Medium Priority</option>
-                        <option value="HIGH">🔴 High Priority</option>
-                      </select>
-                      <input
-                        type="date"
-                        className="input text-sm"
-                        value={taskForm.due_date}
-                        onChange={e => setTaskForm({ ...taskForm, due_date: e.target.value })}
-                      />
-                    </div>
-                    <div className="flex gap-2 pt-1">
-                      <button className="btn-primary flex-1 text-sm py-2" onClick={() => createTask(col.id)}>
-                        Add Task
-                      </button>
-                      <button className="btn-secondary text-sm py-2 px-3" onClick={() => setShowAddTask(null)}>
-                        <X size={16} />
-                      </button>
-                    </div>
+                    <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-zinc-200/50 dark:border-zinc-700/50 shadow-2xs">
+                      {columnTasks.length}
+                    </span>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => setShowAddTask(col.id)}
-                    className="mt-3 w-full flex items-center justify-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 p-2.5 rounded-xl hover:bg-white/80 dark:hover:bg-gray-800/80 border border-dashed border-gray-300 dark:border-gray-700 transition-colors"
-                  >
-                    <Plus size={16} /> Task add karo
-                  </button>
-                )}
-              </div>
-            ))}
+
+                  {/* Task List Droppable Area */}
+                  <Droppable droppableId={col.id}>
+                    {(provided, snap) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`space-y-3 flex-1 min-h-[120px] rounded-2xl transition-all duration-150 p-1 ${
+                          snap.isDraggingOver ? 'bg-indigo-50/50 dark:bg-indigo-950/20 ring-2 ring-indigo-500/20' : ''
+                        }`}
+                      >
+                        {columnTasks.map((task, i) => {
+                          const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.MEDIUM
+                          return (
+                            <Draggable key={task.id} draggableId={task.id} index={i}>
+                              {(provided, snap) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  onClick={() => openTask(task)}
+                                  className={`group bg-white dark:bg-zinc-900/90 rounded-2xl p-4 border border-zinc-200/80 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-md transition-all duration-200 cursor-pointer ${
+                                    snap.isDragging
+                                      ? 'shadow-2xl rotate-1 scale-[1.02] ring-2 ring-indigo-500'
+                                      : 'shadow-xs'
+                                  }`}
+                                >
+                                  {/* Task Title & Priority */}
+                                  <div className="flex items-start justify-between gap-2.5">
+                                    <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 flex-1 leading-snug line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                      {task.title}
+                                    </h3>
+                                    <div
+                                      className={`flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-lg border ${priority.style}`}
+                                    >
+                                      <div className={`w-1.5 h-1.5 rounded-full ${priority.dot}`} />
+                                      <span>{priority.label}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Optional Description snippet */}
+                                  {task.description && (
+                                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 line-clamp-2 leading-relaxed">
+                                      {task.description}
+                                    </p>
+                                  )}
+
+                                  {/* Footer: Date & Comment Badge */}
+                                  <div className="flex items-center justify-between mt-3.5 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80">
+                                    <div className="flex items-center gap-2">
+                                      {task.due_date ? (
+                                        <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-800/80 px-2 py-0.5 rounded-md">
+                                          <Calendar size={12} className="text-zinc-400" />
+                                          {format(new Date(task.due_date), 'MMM d')}
+                                        </span>
+                                      ) : (
+                                        <div />
+                                      )}
+                                      {task.assignee && (
+                                        <div
+                                          className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-xs"
+                                          style={{ backgroundColor: project.color || '#6366f1' }}
+                                          title={`Assigned to ${task.assignee.name}`}
+                                        >
+                                          {task.assignee.name.charAt(0)}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Beautiful Comment Pill */}
+                                    <div
+                                      className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600 dark:hover:text-indigo-400 px-2.5 py-1 rounded-full border border-zinc-200/60 dark:border-zinc-700/60 transition-colors shadow-2xs"
+                                      title={`${task.comment_count || 0} comments`}
+                                    >
+                                      <MessageSquare size={12} className="text-zinc-400 group-hover:text-indigo-500 transition-colors" />
+                                      <span>{task.comment_count || 0}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          )
+                        })}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+
+                  {/* Add Task Interactive Area */}
+                  {showAddTask === col.id ? (
+                    <div className="mt-3 bg-white dark:bg-zinc-900 rounded-2xl p-4 space-y-3 border border-zinc-200 dark:border-zinc-800 shadow-md animate-pop">
+                      <input
+                        autoFocus
+                        className="input text-sm"
+                        placeholder="Task title..."
+                        value={taskForm.title}
+                        onChange={e => setTaskForm({ ...taskForm, title: e.target.value })}
+                        onKeyDown={e => e.key === 'Enter' && createTask(col.id)}
+                      />
+                      <textarea
+                        className="input text-sm resize-none"
+                        rows={2}
+                        placeholder="Add some details..."
+                        value={taskForm.description}
+                        onChange={e => setTaskForm({ ...taskForm, description: e.target.value })}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <select
+                          className="input text-xs"
+                          value={taskForm.priority}
+                          onChange={e => setTaskForm({ ...taskForm, priority: e.target.value })}
+                        >
+                          <option value="LOW">🟢 Low Priority</option>
+                          <option value="MEDIUM">🟡 Medium Priority</option>
+                          <option value="HIGH">🔴 High Priority</option>
+                        </select>
+                        <input
+                          type="date"
+                          className="input text-xs"
+                          value={taskForm.due_date}
+                          onChange={e => setTaskForm({ ...taskForm, due_date: e.target.value })}
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <button className="btn-primary flex-1 text-xs py-2" onClick={() => createTask(col.id)}>
+                          Add Task
+                        </button>
+                        <button
+                          className="btn-secondary text-xs py-2 px-3"
+                          onClick={() => setShowAddTask(null)}
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowAddTask(col.id)}
+                      className="mt-3 w-full flex items-center justify-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-2.5 rounded-xl hover:bg-white/80 dark:hover:bg-zinc-800/60 border border-dashed border-zinc-300/80 dark:border-zinc-800 transition-all"
+                    >
+                      <Plus size={14} /> New Task
+                    </button>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </DragDropContext>
       </div>
 
-      {/* Task Drawer */}
+      {/* Modern Slide-Over Task Drawer */}
       {selectedTask && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-end"
+          className="fixed inset-0 bg-zinc-950/40 backdrop-blur-xs z-50 flex justify-end transition-opacity"
           onClick={() => setSelectedTask(null)}
         >
           <div
-            className="w-full max-w-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 h-full overflow-y-auto shadow-2xl animate-slide-in border-l border-gray-200 dark:border-gray-800"
+            className="w-full max-w-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 h-full overflow-y-auto shadow-2xl animate-slide-in border-l border-zinc-200 dark:border-zinc-800 flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            <div className="p-6 space-y-6">
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex-1 leading-snug">
+            {/* Drawer Top Header */}
+            <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`text-xs px-3 py-1 rounded-full font-medium ${
+                    selectedTask.status === 'TODO'
+                      ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                      : selectedTask.status === 'IN_PROGRESS'
+                      ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
+                      : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
+                  }`}
+                >
+                  {selectedTask.status === 'IN_PROGRESS'
+                    ? 'In Progress'
+                    : selectedTask.status === 'TODO'
+                    ? 'To Do'
+                    : 'Done'}
+                </span>
+                <span
+                  className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
+                    PRIORITY_CONFIG[selectedTask.priority]?.style
+                  }`}
+                >
+                  {PRIORITY_CONFIG[selectedTask.priority]?.label} Priority
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedTask(null)}
+                className="p-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Drawer Body Content */}
+            <div className="p-6 space-y-6 flex-1">
+              <div>
+                <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 leading-snug">
                   {selectedTask.title}
                 </h2>
-                <button
-                  onClick={() => setSelectedTask(null)}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="flex flex-wrap gap-2.5">
-                <span className={`text-xs px-3 py-1 rounded-full font-bold shadow-xs ${
-                  selectedTask.status === 'TODO' ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700' :
-                  selectedTask.status === 'IN_PROGRESS' ? 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' :
-                  'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                }`}>
-                  {selectedTask.status === 'IN_PROGRESS' ? 'In Progress' : selectedTask.status === 'TODO' ? 'To Do' : 'Done'}
-                </span>
-                <span className={`text-xs font-bold px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 ${PRIORITY_COLOR[selectedTask.priority]}`}>
-                  🔥 {selectedTask.priority}
-                </span>
               </div>
 
               {selectedTask.description && (
-                <div>
-                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                <div className="space-y-1.5">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                     Description
-                  </p>
-                  <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-800">
+                  </span>
+                  <div className="text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/40 p-4 rounded-2xl border border-zinc-100 dark:border-zinc-800 whitespace-pre-wrap leading-relaxed">
                     {selectedTask.description}
-                  </p>
-                </div>
-              )}
-
-              {selectedTask.due_date && (
-                <div>
-                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                    Due Date
-                  </p>
-                  <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">
-                    📅 {format(new Date(selectedTask.due_date), 'MMMM d, yyyy')}
-                  </p>
-                </div>
-              )}
-
-              {selectedTask.assignee && (
-                <div>
-                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                    Assigned To
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm"
-                      style={{ backgroundColor: project.color }}
-                    >
-                      {selectedTask.assignee.name.charAt(0)}
-                    </div>
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{selectedTask.assignee.name}</span>
                   </div>
                 </div>
               )}
 
-              <div>
+              {selectedTask.due_date && (
+                <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                  <Calendar size={15} className="text-zinc-400" />
+                  <span>Due {format(new Date(selectedTask.due_date), 'MMMM d, yyyy')}</span>
+                </div>
+              )}
+
+              <div className="pt-2">
                 <button
                   onClick={() => deleteTask(selectedTask.id)}
-                  className="text-sm font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:underline transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:underline"
                 >
-                  🗑️ Task delete karo
+                  <Trash2 size={13} /> Delete this task
                 </button>
               </div>
 
               {/* Comments Section */}
-              <div className="border-t border-gray-200 dark:border-gray-800 pt-5 space-y-4">
+              <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                    Comments ({comments.length})
-                  </p>
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <MessageSquare size={16} className="text-zinc-400" />
+                    <span>Activity & Comments</span>
+                    <span className="text-xs font-normal text-zinc-400">({comments.length})</span>
+                  </h3>
                 </div>
 
-                <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                   {comments.length === 0 ? (
-                    <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-6 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
-                      Pehla comment likho! 💬
-                    </p>
+                    <div className="text-center py-8 rounded-2xl bg-zinc-50 dark:bg-zinc-800/30 border border-dashed border-zinc-200 dark:border-zinc-800">
+                      <p className="text-xs text-zinc-400">No comments yet. Start the discussion!</p>
+                    </div>
                   ) : (
                     comments.map(c => (
-                      <div key={c.id} className="flex gap-2.5">
+                      <div key={c.id} className="flex gap-3 items-start">
                         <div
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-xs"
-                          style={{ backgroundColor: project.color }}
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 shadow-2xs mt-0.5"
+                          style={{ backgroundColor: project.color || '#6366f1' }}
                         >
-                          {c.author?.name?.charAt(0) || 'U'}
+                          {c.author?.name?.charAt(0).toUpperCase() || 'U'}
                         </div>
-                        <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-xl px-3.5 py-2.5 border border-gray-200/80 dark:border-gray-700/80">
-                          <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{c.author?.name}</p>
-                          <p className="text-sm mt-0.5 text-gray-900 dark:text-gray-100">{c.content}</p>
+                        <div className="flex-1 bg-zinc-100/80 dark:bg-zinc-800/70 rounded-2xl px-4 py-2.5 border border-zinc-200/50 dark:border-zinc-700/50">
+                          <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-200">
+                            {c.author?.name}
+                          </p>
+                          <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-1 leading-relaxed">
+                            {c.content}
+                          </p>
                         </div>
                       </div>
                     ))
                   )}
                 </div>
 
+                {/* Comment Input */}
                 <div className="flex gap-2 pt-2">
                   <input
                     className="input text-sm flex-1"
-                    placeholder="Comment likho..."
+                    placeholder="Write a comment..."
                     value={newComment}
                     onChange={e => setNewComment(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addComment()}
                   />
-                  <button className="btn-primary text-sm px-4 py-2 font-semibold" onClick={addComment}>
-                    Send
+                  <button
+                    className="btn-primary text-sm px-4 py-2.5"
+                    onClick={addComment}
+                  >
+                    <Send size={14} />
                   </button>
                 </div>
               </div>
@@ -553,28 +636,28 @@ export default function KanbanBoard({ project, initialTasks, user }) {
 
       {/* Add Member Modal */}
       {showMemberModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="card w-full max-w-sm p-6 animate-fade-in shadow-xl">
+        <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="card w-full max-w-sm p-6 animate-pop shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-lg text-gray-900 dark:text-gray-100">Member Add Karo</h2>
+              <h2 className="font-bold text-base text-zinc-900 dark:text-zinc-100">Add Team Member</h2>
               <button
                 onClick={() => setShowMemberModal(false)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                className="p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              Member ki email daalo (unka account pehle se hona chahiye)
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3.5">
+              Enter their registered email address to collaborate on this board.
             </p>
             <input
               className="input text-sm mb-4"
-              placeholder="member@example.com"
+              placeholder="teammate@example.com"
               value={memberEmail}
               onChange={e => setMemberEmail(e.target.value)}
             />
-            <button className="btn-primary w-full py-2.5" onClick={addMember}>
-              <Users size={16} /> Add Member
+            <button className="btn-primary w-full py-2.5 text-sm" onClick={addMember}>
+              Add to Project
             </button>
           </div>
         </div>
