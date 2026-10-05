@@ -44,7 +44,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
             toast(`Naya task add hua: "${payload.new.title}"`, { icon: '📋' })
           }
         } else if (payload.eventType === 'UPDATE') {
-          setTasks(prev => prev.map(t => t.id === payload.new.id ? { ...t, ...payload.new } : t))
+          setTasks(prev => prev.map(t => t.id === payload.new.id ? { ...t, ...payload.new, comment_count: t.comment_count ?? 0 } : t))
         } else if (payload.eventType === 'DELETE') {
           setTasks(prev => prev.filter(t => t.id !== payload.old.id))
         }
