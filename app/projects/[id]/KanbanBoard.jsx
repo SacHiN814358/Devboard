@@ -98,32 +98,27 @@ export default function KanbanBoard({ project, initialTasks, user }) {
   const openTask = async (task) => {
     setSelectedTask(task)
     setNewComment('')
+
+    // Fetch comments for this task
     const { data, error } = await supabase
       .from('comments')
-      .select('*, profiles(id, name)')
+      .select('*')
       .eq('task_id', task.id)
       .order('created_at', { ascending: true })
 
-    if (error) {
-      const { data: fallbackData } = await supabase
-        .from('comments')
-        .select('*')
-        .eq('task_id', task.id)
-        .order('created_at', { ascending: true })
+    const commentList = data || []
 
-      const formatted = (fallbackData || []).map(c => ({
-        ...c,
-        author: { name: c.author_id === user.id ? userName : 'Member' }
-      }))
-      setComments(formatted)
-      return
-    }
-
-    const formatted = (data || []).map(c => ({
+    const formatted = commentList.map(c => ({
       ...c,
-      author: c.profiles || { name: 'User' }
+      author: { name: c.author_id === user.id ? userName : 'Member' }
     }))
     setComments(formatted)
+
+    // Sync the real comment count into the tasks state
+    // so the card badge is always accurate when opening a task
+    setTasks(prev => prev.map(t =>
+      t.id === task.id ? { ...t, comment_count: commentList.length } : t
+    ))
   }
 
   const addComment = async () => {
