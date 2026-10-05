@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary-50: #eef2ff;
   --color-primary-100: #e0e7ff;
@@ -15,31 +17,31 @@
     to { transform: translateX(0); opacity: 1; }
   }
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { transform: translateY(8px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
   }
 }
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 min-h-screen;
+    @apply bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200 antialiased;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-[#6366f1] hover:bg-[#4f46e5] text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2;
+    @apply bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm;
   }
   .btn-secondary {
-    @apply bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2;
+    @apply bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700;
   }
   .input {
-    @apply w-full border border-gray-200 bg-white rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#6366f1] text-sm placeholder:text-gray-400;
+    @apply w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors;
   }
   .card {
-    @apply bg-white rounded-xl border border-gray-200 shadow-sm;
+    @apply bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm text-gray-900 dark:text-gray-100 transition-colors;
   }
   .label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
+    @apply block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1;
   }
 }
