@@ -6,7 +6,7 @@ import { createClient } from '../../../lib/supabase/client'
 import Navbar from '../../../components/Navbar'
 import CardMascot from '../../../components/CardMascot'
 import FloatingMascot from '../../../components/FloatingMascot'
-import { playPop, playWhoosh, playSuccess } from '../../../lib/sound'
+import { playPop, playWhoosh, playSuccess, playDrop, playPeek } from '../../../lib/sound'
 import {
   ArrowLeft,
   Plus,
@@ -173,10 +173,13 @@ export default function KanbanBoard({ project, initialTasks, user }) {
   const doneTasks = tasks.filter(t => t.status === 'DONE').length
   const progressPct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
 
+  const onDragStart = () => {
+    playWhoosh()
+  }
+
   const onDragEnd = async ({ destination, source, draggableId }) => {
     if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) return
     const newStatus = destination.droppableId
-    playWhoosh()
     setTasks(prev => prev.map(t => t.id === draggableId ? { ...t, status: newStatus } : t))
     await supabase.from('tasks').update({ status: newStatus }).eq('id', draggableId)
 
@@ -195,6 +198,8 @@ export default function KanbanBoard({ project, initialTasks, user }) {
         window.dispatchEvent(new Event('devboard_task_done'))
       }
       toast('Task Completed! 🎉 Superb job!', { icon: '🌟' })
+    } else {
+      playDrop()
     }
   }
 
@@ -457,7 +462,10 @@ export default function KanbanBoard({ project, initialTasks, user }) {
             ].map(p => (
               <button
                 key={p.id}
-                onClick={() => setFilterPriority(p.id)}
+                onClick={() => {
+                  playPop()
+                  setFilterPriority(p.id)
+                }}
                 className={`text-xs px-3 py-1.5 rounded-xl font-semibold transition-all active:scale-95 ${
                   filterPriority === p.id
                     ? 'bg-indigo-600 text-white shadow-xs'
@@ -471,7 +479,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
         </div>
 
         {/* Modern Kanban Board Columns */}
-        <DragDropContext onDragEnd={onDragEnd}>
+        <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
             {COLUMNS.map(col => {
               const columnTasks = getByStatus(col.id)
@@ -513,6 +521,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
                                   onClick={() => openTask(task)}
+                                  onMouseEnter={() => playPeek()}
                                   className={`group relative bg-white dark:bg-zinc-900/95 rounded-2xl p-4.5 border border-zinc-200/80 dark:border-zinc-800/80 hover:border-indigo-400 dark:hover:border-indigo-600/70 hover:shadow-xl transition-all duration-200 cursor-pointer hover:z-30 ${
                                     snap.isDragging
                                       ? 'shadow-2xl rotate-2 scale-[1.03] ring-2 ring-indigo-500 z-50'
@@ -640,7 +649,10 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                         </button>
                         <button
                           className="btn-secondary text-xs py-2 px-3"
-                          onClick={() => setShowAddTask(null)}
+                          onClick={() => {
+                            playPop()
+                            setShowAddTask(null)
+                          }}
                         >
                           <X size={15} />
                         </button>
@@ -648,7 +660,10 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                     </div>
                   ) : (
                     <button
-                      onClick={() => setShowAddTask(col.id)}
+                      onClick={() => {
+                        playPop()
+                        setShowAddTask(col.id)
+                      }}
                       className="mt-3 w-full flex items-center justify-center gap-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-2.5 rounded-xl hover:bg-white/80 dark:hover:bg-zinc-800/60 border border-dashed border-zinc-300/80 dark:border-zinc-800 transition-all active:scale-[0.98]"
                     >
                       <Plus size={14} /> New Task
@@ -665,7 +680,10 @@ export default function KanbanBoard({ project, initialTasks, user }) {
       {selectedTask && (
         <div
           className="fixed inset-0 bg-zinc-950/40 backdrop-blur-xs z-50 flex justify-end transition-opacity"
-          onClick={() => setSelectedTask(null)}
+          onClick={() => {
+            playPop()
+            setSelectedTask(null)
+          }}
         >
           <div
             className="w-full max-w-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 h-full overflow-y-auto shadow-2xl animate-slide-in border-l border-zinc-200 dark:border-zinc-800 flex flex-col"
@@ -698,7 +716,10 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                 </span>
               </div>
               <button
-                onClick={() => setSelectedTask(null)}
+                onClick={() => {
+                  playPop()
+                  setSelectedTask(null)
+                }}
                 className="p-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
               >
                 <X size={18} />

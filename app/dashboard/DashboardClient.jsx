@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '../../lib/supabase/client'
 import Navbar from '../../components/Navbar'
 import FloatingMascot from '../../components/FloatingMascot'
-import { playPop, playWhoosh } from '../../lib/sound'
+import { playPop, playWhoosh, playBoing } from '../../lib/sound'
 import { Plus, FolderOpen, CheckCircle2, Users, Trash2, X, Loader2, ArrowUpRight } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 
@@ -69,7 +69,11 @@ export default function DashboardClient({ initialProjects, taskCount, user }) {
         {/* Header Section with playful waving greeting */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="relative group cursor-pointer">
+            <div
+              onClick={() => playBoing()}
+              className="relative group cursor-pointer"
+              title="Pet me! 🦊"
+            >
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-md shadow-indigo-500/20 animate-mascot-bob">
                 <div className="w-full h-full bg-white dark:bg-zinc-900 rounded-[14px] flex items-center justify-center text-2xl select-none">
                   🦊
@@ -88,7 +92,13 @@ export default function DashboardClient({ initialProjects, taskCount, user }) {
               </p>
             </div>
           </div>
-          <button onClick={() => setShowModal(true)} className="btn-primary self-start sm:self-auto">
+          <button
+            onClick={() => {
+              playPop()
+              setShowModal(true)
+            }}
+            className="btn-primary self-start sm:self-auto"
+          >
             <Plus size={17} /> New Project
           </button>
         </div>

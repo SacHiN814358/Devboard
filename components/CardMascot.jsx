@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { playPeek, playBoing } from '../lib/sound'
 
 export const MASCOTS = [
   {
@@ -272,6 +273,7 @@ export default function CardMascot({ index = 0, taskId = '', columnId = '' }) {
 
   // Every time the card is hovered, cycle to a fresh mascot and fresh dialogue!
   const handleHover = () => {
+    playPeek()
     setMascotIdx(prev => (prev + 1 + Math.floor(Math.random() * 2)) % MASCOTS.length)
     setSpeechIdx(prev => (prev + 1) % 6)
     setBounce(true)
@@ -299,7 +301,16 @@ export default function CardMascot({ index = 0, taskId = '', columnId = '' }) {
         </div>
 
         {/* Mascot SVG */}
-        <div className="cursor-pointer transition-transform hover:scale-110 active:scale-95">
+        <div
+          onClick={(e) => {
+            e.stopPropagation()
+            playBoing()
+            setBounce(true)
+            setTimeout(() => setBounce(false), 400)
+          }}
+          className="cursor-pointer transition-transform hover:scale-110 active:scale-95"
+          title={`Hi, I'm ${currentMascot.name}! Click me!`}
+        >
           {currentMascot.render()}
         </div>
       </div>
