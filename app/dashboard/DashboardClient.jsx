@@ -72,15 +72,15 @@ export default function DashboardClient({ initialProjects, taskCount, user }) {
             <div
               onClick={() => playBoing()}
               className="relative group cursor-pointer"
-              title="Pet me! 🦊"
+              title="I am Bat-Buddy! 🦇"
             >
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-md shadow-indigo-500/20 animate-mascot-bob">
-                <div className="w-full h-full bg-white dark:bg-zinc-900 rounded-[14px] flex items-center justify-center text-2xl select-none">
-                  🦊
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-zinc-950 via-zinc-900 to-amber-500 p-0.5 shadow-md shadow-amber-500/15 animate-mascot-bob">
+                <div className="w-full h-full bg-zinc-900 text-white rounded-[14px] flex items-center justify-center text-2xl select-none">
+                  🦇
                 </div>
               </div>
-              <div className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-xs animate-bounce">
-                Hi!
+              <div className="absolute -top-2 -right-2 bg-amber-500 text-zinc-950 text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-xs animate-bounce">
+                🦇
               </div>
             </div>
             <div>
