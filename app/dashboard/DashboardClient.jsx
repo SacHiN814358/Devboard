@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../lib/supabase/client'
 import Navbar from '../../components/Navbar'
+import FloatingMascot from '../../components/FloatingMascot'
+import { playPop, playWhoosh } from '../../lib/sound'
 import { Plus, FolderOpen, CheckCircle2, Users, Trash2, X, Loader2, ArrowUpRight } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 
@@ -34,6 +36,7 @@ export default function DashboardClient({ initialProjects, taskCount, user }) {
       return
     }
 
+    playPop()
     // Owner ko member bhi banao
     await supabase.from('project_members').insert({ project_id: projectData.id, user_id: user.id, role: 'OWNER' })
 
@@ -48,6 +51,7 @@ export default function DashboardClient({ initialProjects, taskCount, user }) {
   const deleteProject = async (projectId, e) => {
     e.preventDefault()
     if (!confirm('Are you sure you want to delete this project? All associated tasks will be removed.')) return
+    playWhoosh()
     const { error } = await supabase.from('projects').delete().eq('id', projectId)
     if (error) toast.error('Could not delete project')
     else {
@@ -284,6 +288,9 @@ export default function DashboardClient({ initialProjects, taskCount, user }) {
           </div>
         </div>
       )}
+
+      {/* Floating Interactive Mascot Pet */}
+      <FloatingMascot />
     </div>
   )
 }

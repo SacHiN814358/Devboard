@@ -5,6 +5,8 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { createClient } from '../../../lib/supabase/client'
 import Navbar from '../../../components/Navbar'
 import CardMascot from '../../../components/CardMascot'
+import FloatingMascot from '../../../components/FloatingMascot'
+import { playPop, playWhoosh, playSuccess } from '../../../lib/sound'
 import {
   ArrowLeft,
   Plus,
@@ -174,24 +176,31 @@ export default function KanbanBoard({ project, initialTasks, user }) {
   const onDragEnd = async ({ destination, source, draggableId }) => {
     if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) return
     const newStatus = destination.droppableId
+    playWhoosh()
     setTasks(prev => prev.map(t => t.id === draggableId ? { ...t, status: newStatus } : t))
     await supabase.from('tasks').update({ status: newStatus }).eq('id', draggableId)
 
     // Joyful celebration animation when moving task to DONE!
     if (newStatus === 'DONE' && source.droppableId !== 'DONE') {
+      playSuccess()
       try {
         confetti({
-          particleCount: 65,
-          spread: 70,
+          particleCount: 75,
+          spread: 75,
           origin: { y: 0.6 }
         })
       } catch (e) {}
+      // Notify floating mascot to celebrate/dance!
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('devboard_task_done'))
+      }
       toast('Task Completed! 🎉 Superb job!', { icon: '🌟' })
     }
   }
 
   const createTask = async (status) => {
     if (!taskForm.title.trim()) return
+    playPop()
     const { data, error } = await supabase
       .from('tasks')
       .insert({
@@ -216,6 +225,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
 
   const deleteTask = async (taskId) => {
     if (!confirm('Are you sure you want to delete this task?')) return
+    playWhoosh()
     await supabase.from('tasks').delete().eq('id', taskId)
     setTasks(prev => prev.filter(t => t.id !== taskId))
     setSelectedTask(null)
@@ -223,6 +233,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
   }
 
   const openTask = async (task) => {
+    playPop()
     setSelectedTask(task)
     setNewComment('')
 
@@ -247,6 +258,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
 
   const addComment = async () => {
     if (!newComment.trim() || !selectedTask) return
+    playPop()
     const commentContent = newComment.trim()
     const targetTaskId = selectedTask.id
 
@@ -815,6 +827,9 @@ export default function KanbanBoard({ project, initialTasks, user }) {
           </div>
         </div>
       )}
+
+      {/* Interactive Floating Mascot Pet Companion */}
+      <FloatingMascot />
     </div>
   )
 }
