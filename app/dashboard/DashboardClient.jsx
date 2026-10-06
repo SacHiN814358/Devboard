@@ -62,15 +62,27 @@ export default function DashboardClient({ initialProjects, taskCount, user }) {
       <Toaster position="top-right" />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-9 animate-fade-in">
-        {/* Header Section */}
+        {/* Header Section with playful waving greeting */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-              Welcome back, {name.split(' ')[0]} 👋
-            </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-              Here's an overview of your active workspaces and projects.
-            </p>
+          <div className="flex items-center gap-4">
+            <div className="relative group cursor-pointer">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-md shadow-indigo-500/20 animate-mascot-bob">
+                <div className="w-full h-full bg-white dark:bg-zinc-900 rounded-[14px] flex items-center justify-center text-2xl select-none">
+                  🦊
+                </div>
+              </div>
+              <div className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-xs animate-bounce">
+                Hi!
+              </div>
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                Welcome back, {name.split(' ')[0]}! <span className="inline-block animate-wave-hand">👋</span>
+              </h1>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Your workspaces are ready. Drag, drop, and collaborate! ✨
+              </p>
+            </div>
           </div>
           <button onClick={() => setShowModal(true)} className="btn-primary self-start sm:self-auto">
             <Plus size={17} /> New Project

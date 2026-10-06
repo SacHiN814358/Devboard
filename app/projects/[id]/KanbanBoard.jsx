@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { createClient } from '../../../lib/supabase/client'
 import Navbar from '../../../components/Navbar'
+import CardMascot from '../../../components/CardMascot'
 import {
   ArrowLeft,
   Plus,
@@ -11,15 +12,16 @@ import {
   MessageSquare,
   Users,
   Calendar,
-  Clock,
   CheckCircle2,
   Circle,
   Clock3,
   Trash2,
-  Send
+  Send,
+  Sparkles
 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import { format } from 'date-fns'
+import confetti from 'canvas-confetti'
 
 const COLUMNS = [
   {
@@ -149,10 +151,22 @@ export default function KanbanBoard({ project, initialTasks, user }) {
   const getByStatus = (status) => tasks.filter(t => t.status === status)
 
   const onDragEnd = async ({ destination, source, draggableId }) => {
-    if (!destination || destination.droppableId === source.droppableId) return
+    if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) return
     const newStatus = destination.droppableId
     setTasks(prev => prev.map(t => t.id === draggableId ? { ...t, status: newStatus } : t))
     await supabase.from('tasks').update({ status: newStatus }).eq('id', draggableId)
+
+    // Joyful celebration animation when moving task to DONE!
+    if (newStatus === 'DONE' && source.droppableId !== 'DONE') {
+      try {
+        confetti({
+          particleCount: 65,
+          spread: 70,
+          origin: { y: 0.6 }
+        })
+      } catch (e) {}
+      toast('Task Completed! 🎉 Superb job!', { icon: '🌟' })
+    }
   }
 
   const createTask = async (status) => {
@@ -176,7 +190,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
     setTasks(prev => [{ ...data, comment_count: 0 }, ...prev])
     setShowAddTask(null)
     setTaskForm({ title: '', description: '', priority: 'MEDIUM', due_date: '' })
-    toast.success('Task created successfully')
+    toast.success('Task created! ✨')
   }
 
   const deleteTask = async (taskId) => {
@@ -247,7 +261,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
       return t
     }))
 
-    toast.success('Comment posted!')
+    toast.success('Comment posted! 💬')
   }
 
   const addMember = async () => {
@@ -275,19 +289,19 @@ export default function KanbanBoard({ project, initialTasks, user }) {
           <div className="flex items-center gap-3.5">
             <button
               onClick={() => router.push('/dashboard')}
-              className="p-2 rounded-xl text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-900 transition-all active:scale-95 border border-transparent hover:border-zinc-300/60 dark:hover:border-zinc-800"
+              className="p-2.5 rounded-xl text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-900 transition-all active:scale-95 border border-transparent hover:border-zinc-300/60 dark:hover:border-zinc-800"
               title="Back to Dashboard"
             >
               <ArrowLeft size={18} />
             </button>
             <div
-              className="w-10 h-10 rounded-2xl shadow-sm flex items-center justify-center text-white font-bold text-base shadow-indigo-500/15"
+              className="w-11 h-11 rounded-2xl shadow-sm flex items-center justify-center text-white font-bold text-lg shadow-indigo-500/15"
               style={{ backgroundColor: project.color || '#6366f1' }}
             >
               {project.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 {project.name}
               </h1>
               {project.description && (
@@ -326,23 +340,23 @@ export default function KanbanBoard({ project, initialTasks, user }) {
 
         {/* Modern Kanban Board Columns */}
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
             {COLUMNS.map(col => {
               const columnTasks = getByStatus(col.id)
               return (
                 <div
                   key={col.id}
-                  className={`rounded-3xl p-4 ${col.bg} min-h-[560px] flex flex-col shadow-xs transition-colors`}
+                  className={`rounded-3xl p-4.5 ${col.bg} min-h-[580px] flex flex-col shadow-xs transition-colors`}
                 >
                   {/* Column Header */}
                   <div className="flex items-center justify-between mb-4 px-1.5">
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${col.dotColor}`} />
-                      <span className="font-semibold text-sm tracking-tight text-zinc-800 dark:text-zinc-200">
+                      <div className={`w-2.5 h-2.5 rounded-full ${col.dotColor} animate-pulse`} />
+                      <span className="font-bold text-sm tracking-tight text-zinc-800 dark:text-zinc-200">
                         {col.label}
                       </span>
                     </div>
-                    <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 bg-white/80 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-zinc-200/50 dark:border-zinc-700/50 shadow-2xs">
+                    <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 bg-white/90 dark:bg-zinc-800/90 px-2.5 py-0.5 rounded-full border border-zinc-200/60 dark:border-zinc-700/60 shadow-2xs">
                       {columnTasks.length}
                     </span>
                   </div>
@@ -353,7 +367,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={`space-y-3 flex-1 min-h-[120px] rounded-2xl transition-all duration-150 p-1 ${
+                        className={`space-y-4 flex-1 min-h-[140px] rounded-2xl transition-all duration-150 p-1 pt-3 ${
                           snap.isDraggingOver ? 'bg-indigo-50/50 dark:bg-indigo-950/20 ring-2 ring-indigo-500/20' : ''
                         }`}
                       >
@@ -367,19 +381,22 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
                                   onClick={() => openTask(task)}
-                                  className={`group bg-white dark:bg-zinc-900/90 rounded-2xl p-4 border border-zinc-200/80 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-md transition-all duration-200 cursor-pointer ${
+                                  className={`group relative bg-white dark:bg-zinc-900/95 rounded-2xl p-4.5 border border-zinc-200/80 dark:border-zinc-800/80 hover:border-indigo-400 dark:hover:border-indigo-600/70 hover:shadow-xl transition-all duration-200 cursor-pointer hover:z-30 ${
                                     snap.isDragging
-                                      ? 'shadow-2xl rotate-1 scale-[1.02] ring-2 ring-indigo-500'
-                                      : 'shadow-xs'
+                                      ? 'shadow-2xl rotate-2 scale-[1.03] ring-2 ring-indigo-500 z-50'
+                                      : 'shadow-xs hover:-translate-y-1'
                                   }`}
                                 >
+                                  {/* Cartoon Mascot popping out from behind the top of card & waving! */}
+                                  <CardMascot index={i} />
+
                                   {/* Task Title & Priority */}
-                                  <div className="flex items-start justify-between gap-2.5">
-                                    <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 flex-1 leading-snug line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                  <div className="flex items-start justify-between gap-2.5 relative z-10">
+                                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex-1 leading-snug line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                       {task.title}
                                     </h3>
                                     <div
-                                      className={`flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-lg border ${priority.style}`}
+                                      className={`flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-lg border ${priority.style}`}
                                     >
                                       <div className={`w-1.5 h-1.5 rounded-full ${priority.dot}`} />
                                       <span>{priority.label}</span>
@@ -388,13 +405,13 @@ export default function KanbanBoard({ project, initialTasks, user }) {
 
                                   {/* Optional Description snippet */}
                                   {task.description && (
-                                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 line-clamp-2 leading-relaxed">
+                                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 line-clamp-2 leading-relaxed relative z-10">
                                       {task.description}
                                     </p>
                                   )}
 
                                   {/* Footer: Date & Comment Badge */}
-                                  <div className="flex items-center justify-between mt-3.5 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80">
+                                  <div className="flex items-center justify-between mt-3.5 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80 relative z-10">
                                     <div className="flex items-center gap-2">
                                       {task.due_date ? (
                                         <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-800/80 px-2 py-0.5 rounded-md">
@@ -415,9 +432,9 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                                       )}
                                     </div>
 
-                                    {/* Beautiful Comment Pill */}
+                                    {/* Playful Interactive Comment Pill */}
                                     <div
-                                      className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600 dark:hover:text-indigo-400 px-2.5 py-1 rounded-full border border-zinc-200/60 dark:border-zinc-700/60 transition-colors shadow-2xs"
+                                      className="flex items-center gap-1.5 text-xs font-bold text-zinc-600 dark:text-zinc-400 bg-zinc-100/90 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600 dark:hover:text-indigo-400 px-2.5 py-1 rounded-full border border-zinc-200/60 dark:border-zinc-700/60 transition-colors shadow-2xs group-hover:border-indigo-300 dark:group-hover:border-indigo-700"
                                       title={`${task.comment_count || 0} comments`}
                                     >
                                       <MessageSquare size={12} className="text-zinc-400 group-hover:text-indigo-500 transition-colors" />
@@ -429,6 +446,22 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                             </Draggable>
                           )
                         })}
+
+                        {/* Playful Empty Column Mascot State */}
+                        {columnTasks.length === 0 && (
+                          <div className="flex flex-col items-center justify-center py-12 px-4 text-center rounded-2xl bg-white/40 dark:bg-zinc-900/30 border border-dashed border-zinc-200 dark:border-zinc-800/60 my-2">
+                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-2xl flex items-center justify-center mb-2 animate-float shadow-2xs">
+                              {col.id === 'TODO' ? '🐾' : col.id === 'IN_PROGRESS' ? '⚡' : '🏆'}
+                            </div>
+                            <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">
+                              {col.id === 'TODO' ? 'No tasks yet!' : col.id === 'IN_PROGRESS' ? 'Nothing in progress' : 'Nothing completed yet'}
+                            </p>
+                            <p className="text-[11px] text-zinc-400 mt-0.5">
+                              {col.id === 'TODO' ? 'Add a task below' : col.id === 'IN_PROGRESS' ? 'Drag a task here to start' : 'Drag finished tasks here!'}
+                            </p>
+                          </div>
+                        )}
+
                         {provided.placeholder}
                       </div>
                     )}
@@ -484,7 +517,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                   ) : (
                     <button
                       onClick={() => setShowAddTask(col.id)}
-                      className="mt-3 w-full flex items-center justify-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-2.5 rounded-xl hover:bg-white/80 dark:hover:bg-zinc-800/60 border border-dashed border-zinc-300/80 dark:border-zinc-800 transition-all"
+                      className="mt-3 w-full flex items-center justify-center gap-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-2.5 rounded-xl hover:bg-white/80 dark:hover:bg-zinc-800/60 border border-dashed border-zinc-300/80 dark:border-zinc-800 transition-all active:scale-[0.98]"
                     >
                       <Plus size={14} /> New Task
                     </button>
