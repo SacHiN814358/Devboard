@@ -268,7 +268,7 @@ export const MASCOTS = [
     color: '#09090b',
     render: () => (
       <img
-        src="/batman.png"
+        src="/batman-waving.webp"
         alt="Batman"
         className="w-14 h-20 object-contain drop-shadow-md select-none pointer-events-none transform -translate-y-2"
         draggable={false}

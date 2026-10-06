@@ -188,11 +188,11 @@ export default function FloatingMascot() {
           {/* Ambient Glow */}
           <div className="absolute inset-0 bg-amber-500/20 dark:bg-amber-400/25 blur-lg rounded-full -z-10 scale-90" />
 
-          {/* Batman Figurine Image */}
+          {/* Animated 3D Chibi Batman from Google Flow Video */}
           <img
-            src="/batman.png"
-            alt="3D Chibi Batman"
-            className={`w-16 h-28 sm:w-18 sm:h-32 object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.65)] select-none pointer-events-none transition-all duration-300 ${
+            src="/batman-waving.webp"
+            alt="Animated 3D Batman"
+            className={`w-16 h-28 sm:w-20 sm:h-34 object-contain filter drop-shadow-[0_12px_22px_rgba(0,0,0,0.65)] select-none pointer-events-none transition-all duration-300 ${
               isSleeping
                 ? 'rotate-6 opacity-85 scale-95'
                 : isDancing
