@@ -253,6 +253,27 @@ export const MASCOTS = [
         </g>
       </svg>
     )
+  },
+  {
+    id: 'batman',
+    name: 'Batman',
+    speeches: [
+      'I am vengeance! 🦇',
+      "Gotham's tasks await! ⚡",
+      'Stay focused! 🛡️',
+      'The Bat-Signal is on! 🔦',
+      'Justice never rests! 💥',
+      'Finish it! 🏆'
+    ],
+    color: '#09090b',
+    render: () => (
+      <img
+        src="/batman.png"
+        alt="Batman"
+        className="w-14 h-20 object-contain drop-shadow-md select-none pointer-events-none transform -translate-y-2"
+        draggable={false}
+      />
+    )
   }
 ]
 
