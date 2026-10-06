@@ -17,7 +17,10 @@ import {
   Clock3,
   Trash2,
   Send,
-  Sparkles
+  Search,
+  Sparkles,
+  Trophy,
+  Filter
 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import { format } from 'date-fns'
@@ -76,6 +79,8 @@ export default function KanbanBoard({ project, initialTasks, user }) {
   const [showMemberModal, setShowMemberModal] = useState(false)
   const [memberEmail, setMemberEmail] = useState('')
   const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'MEDIUM', due_date: '' })
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterPriority, setFilterPriority] = useState('ALL')
 
   const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'
 
@@ -148,7 +153,23 @@ export default function KanbanBoard({ project, initialTasks, user }) {
     return () => supabase.removeChannel(channel)
   }, [project.id])
 
-  const getByStatus = (status) => tasks.filter(t => t.status === status)
+  // Task filtering with search and priority
+  const getByStatus = (status) => tasks.filter(t => {
+    if (t.status !== status) return false
+    if (filterPriority !== 'ALL' && t.priority !== filterPriority) return false
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      const titleMatch = t.title && t.title.toLowerCase().includes(q)
+      const descMatch = t.description && t.description.toLowerCase().includes(q)
+      return titleMatch || descMatch
+    }
+    return true
+  })
+
+  // Calculate Progress Stats
+  const totalTasks = tasks.length
+  const doneTasks = tasks.filter(t => t.status === 'DONE').length
+  const progressPct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
 
   const onDragEnd = async ({ destination, source, draggableId }) => {
     if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) return
@@ -279,17 +300,21 @@ export default function KanbanBoard({ project, initialTasks, user }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors relative overflow-x-hidden">
+      {/* Ambient Cartoon Floating Glow Blobs */}
+      <div className="fixed top-24 left-10 w-96 h-96 bg-indigo-400/10 dark:bg-indigo-600/5 rounded-full blur-3xl pointer-events-none -z-10 animate-float" />
+      <div className="fixed bottom-10 right-10 w-96 h-96 bg-pink-400/10 dark:bg-pink-600/5 rounded-full blur-3xl pointer-events-none -z-10 animate-float" style={{ animationDelay: '1.5s' }} />
+
       <Navbar />
       <Toaster position="top-right" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-7 animate-fade-in">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-7 animate-fade-in relative z-10">
         {/* Project Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
           <div className="flex items-center gap-3.5">
             <button
               onClick={() => router.push('/dashboard')}
-              className="p-2.5 rounded-xl text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-900 transition-all active:scale-95 border border-transparent hover:border-zinc-300/60 dark:hover:border-zinc-800"
+              className="p-2.5 rounded-xl text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-900 transition-all active:scale-95 border border-transparent hover:border-zinc-300/60 dark:hover:border-zinc-800 shadow-2xs"
               title="Back to Dashboard"
             >
               <ArrowLeft size={18} />
@@ -335,6 +360,101 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                 <Users size={15} /> Add Member
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Playful Sprint Progress Banner */}
+        <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-950/40 dark:via-purple-950/30 dark:to-pink-950/40 rounded-3xl p-5 border border-indigo-200/60 dark:border-indigo-900/40 shadow-xs relative overflow-hidden backdrop-blur-xs">
+          {/* Subtle floating background decorations */}
+          <div className="absolute top-2 right-6 text-xl opacity-40 animate-pulse select-none">✨</div>
+          <div className="absolute bottom-1 right-20 text-sm opacity-30 animate-bounce select-none">⭐</div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-zinc-800 shadow-md flex items-center justify-center text-2xl select-none animate-mascot-bob">
+                {progressPct === 100 ? '🏆' : progressPct > 50 ? '🚀' : '🎯'}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                    Sprint Progress
+                  </h2>
+                  <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 bg-white dark:bg-zinc-800 px-2.5 py-0.5 rounded-full border border-indigo-200/60 dark:border-indigo-800 shadow-2xs">
+                    {progressPct}% Completed
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  {progressPct === 100
+                    ? 'All tasks completed! You are a superstar! 🎉'
+                    : `${doneTasks} of ${totalTasks} tasks done — ${
+                        progressPct > 50 ? 'Over halfway there! Keep pushing! 🔥' : 'Let’s crush today’s goals! 💪'
+                      }`}
+                </p>
+              </div>
+            </div>
+
+            {/* Candy-striped Progress Bar */}
+            <div className="w-full sm:w-64 flex flex-col gap-1.5">
+              <div className="w-full h-3.5 bg-white dark:bg-zinc-800/90 rounded-full overflow-hidden p-0.5 border border-indigo-100 dark:border-zinc-700/60 shadow-inner">
+                <div
+                  className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full transition-all duration-500 shadow-xs relative"
+                  style={{ width: `${progressPct}%` }}
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full" />
+                </div>
+              </div>
+              <div className="flex justify-between text-[11px] font-semibold text-zinc-400 px-1">
+                <span>0%</span>
+                <span>{doneTasks} / {totalTasks} Tasks</span>
+                <span>100%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Search & Priority Filter Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="input pl-9 text-xs sm:text-sm py-2"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            <span className="text-xs font-semibold text-zinc-400 mr-1 hidden sm:inline flex-items-center gap-1">
+              <Filter size={12} className="inline mr-1" /> Priority:
+            </span>
+            {[
+              { id: 'ALL', label: 'All Tasks' },
+              { id: 'HIGH', label: '🔴 High' },
+              { id: 'MEDIUM', label: '🟡 Medium' },
+              { id: 'LOW', label: '🟢 Low' }
+            ].map(p => (
+              <button
+                key={p.id}
+                onClick={() => setFilterPriority(p.id)}
+                className={`text-xs px-3 py-1.5 rounded-xl font-semibold transition-all active:scale-95 ${
+                  filterPriority === p.id
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -387,8 +507,8 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                                       : 'shadow-xs hover:-translate-y-1'
                                   }`}
                                 >
-                                  {/* Cartoon Mascot popping out from behind the top of card & waving! */}
-                                  <CardMascot index={i} />
+                                  {/* Dynamic Cartoon Mascot that changes on every hover! */}
+                                  <CardMascot index={i} taskId={task.id} columnId={col.id} />
 
                                   {/* Task Title & Priority */}
                                   <div className="flex items-start justify-between gap-2.5 relative z-10">
@@ -450,7 +570,7 @@ export default function KanbanBoard({ project, initialTasks, user }) {
                         {/* Playful Empty Column Mascot State */}
                         {columnTasks.length === 0 && (
                           <div className="flex flex-col items-center justify-center py-12 px-4 text-center rounded-2xl bg-white/40 dark:bg-zinc-900/30 border border-dashed border-zinc-200 dark:border-zinc-800/60 my-2">
-                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-2xl flex items-center justify-center mb-2 animate-float shadow-2xs">
+                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-2xl flex items-center justify-center mb-2 animate-float shadow-2xs select-none">
                               {col.id === 'TODO' ? '🐾' : col.id === 'IN_PROGRESS' ? '⚡' : '🏆'}
                             </div>
                             <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">
